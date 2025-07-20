@@ -1,29 +1,35 @@
-import sgMail, { MailDataRequired } from "@sendgrid/mail";
+import nodemailer from "nodemailer";
 import assert from "assert";
 
-const apiKey = process.env.SENDGRID_API_KEY;
-const recipents = process.env.ADMIN_RECIPIENT;
-const sender = process.env.ADMIN_SENDER;
-const signedUptemplate_id = process.env.EMAIL_TEMPLATE_ID;
+const adminRecipient = process.env.ADMIN_RECIPIENT;
 
-assert(apiKey, "SENDGRID_API_KEY is not defined");
-assert(recipents, "ADMIN_RECIPIENT is not defined");
-assert(sender, "ADMIN_SENDER is not defined");
-assert(signedUptemplate_id, "EMAIL_TEMPLATE_ID is not defined");
+assert(adminRecipient, "ADMIN_RECIPIENT is not defined");
 
-sgMail.setApiKey(apiKey);
-const recipientsArray = recipents.split(",");
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST,
+  port: Number(process.env.SMTP_PORT),
+  secure: true,
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
 
-const sendEmail = async (messageBody: MailDataRequired) => {
-  try {
-    await sgMail.send(messageBody);
-  } catch (error) {
-    console.log(error);
-
-    if (error.response) {
-      console.error(error.response.body);
-    }
-  }
+const sendEmail = async ({
+  to,
+  subject,
+  html,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+}) => {
+  await transporter.sendMail({
+    from: process.env.EMAIL_FROM,
+    to,
+    subject,
+    html,
+  });
 };
 
 const getRegisterAdminEmailObject = (
@@ -32,8 +38,7 @@ const getRegisterAdminEmailObject = (
   date: string
 ) => {
   return {
-    to: recipientsArray,
-    from: sender,
+    to: adminRecipient,
     subject: "New registraion to your team!",
     html: `<p>Dear Admin</p>
                 <p> You got a registraion to our team!</p>
@@ -50,8 +55,7 @@ const getUnsubscribeAdminEmailObject = (
   date: string
 ) => {
   return {
-    to: recipientsArray,
-    from: sender,
+    to: adminRecipient,
     subject: "👋 Unsubscription on your team!",
     html: `<p>Dear Admin</p>
                 <p>A member has unsubscribed.</p>
@@ -65,11 +69,14 @@ const getUnsubscribeAdminEmailObject = (
 const getSignedUpEmailObject = (email: string, name: string) => {
   return {
     to: email,
-    from: sender,
-    templateId: signedUptemplate_id,
-    dynamicTemplateData: {
-      name: name,
-    },
+    subject: "Thank you for your registration!",
+    html: `
+      <p>
+        We'll send you an invitation, as soon as we book our field at Tempelhofer.
+        We usually play one time per month during the summer.
+        Looking forward to seeing you there!
+      </p>
+    `,
   };
 };
 

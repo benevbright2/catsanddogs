@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import getDBClient from "../../lib/mongodb";
 import validateMiddleware from "../../lib/validate-middleware";
 import { check, validationResult } from "express-validator";
-import { sendAdminEmail, sendSignedUpEmail } from "../../utils/email-helper";
+import { sendAdminEmail } from "../../utils/email-helper";
 import { Player } from "../../types";
 
 const validateBody = validateMiddleware(
